@@ -13,6 +13,10 @@
 #include <cmath>
 #include <fstream>
 #include <cstdio>
+#include <spawn.h>
+#include <sys/wait.h>
+#include <csignal>
+extern char** environ;
 
 void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
 {
@@ -29,7 +33,15 @@ std::atomic<bool> isRunning(true);
 
 int main(int args, char* argv[])
 {
+	const std::filesystem::path mxlPath = argv[1];
+	std::string command = "python3 mxlToSVG.py \"" + mxlPath.string() + "\"";
+	int result = std::system(command.c_str());
+	if (result != 0) {
+		throw std::runtime_error("mxlToSVG messed up");
+	}
 
+
+	
 	// variables	
 	double SR = 24000;
 	double fMin = 55.0; // a1
@@ -82,6 +94,12 @@ int main(int args, char* argv[])
 
     //main loop
     ma_device_start(&device);     
+
+	// couple viewer with this file	
+	char* viewerArgv[] = {(char*)"python3", (char*)"sheetMusicViewer.py", nullptr};
+	pid_t viewer = -1;
+	posix_spawnp(&viewer, "python3", nullptr, nullptr, viewerArgv, environ);	
+
 	uint64_t prevCqtCount = rb.getTotalCount();
 
 	int measureNo_ = 1;
@@ -109,11 +127,12 @@ int main(int args, char* argv[])
 
 				std::cout << measureNo_ << std::endl;
 			}
-
-			
 		}
+		if (waitpid(viewer, nullptr, WNOHANG) == viewer) isRunning = false;
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}    
+	kill(viewer, SIGTERM);
+	waitpid(viewer, nullptr, 0);
     ma_device_uninit(&device);
 
 

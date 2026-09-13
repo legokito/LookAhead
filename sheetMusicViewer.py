@@ -108,6 +108,7 @@ def main():
     viewer.window = webview.create_window(
         "Sheet Music Viewer",
         "sheetMusicViewer.html",
+        fullscreen=True,
         width=1200,
         height=800,
         resizable=True
