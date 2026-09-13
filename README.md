@@ -14,8 +14,8 @@ engine will be written from scratch. musicXML parsing and rendering will be done
 5. ~~structure to build 24khz audio sample vector from xml file (use python libs)~~
 6. ~~build template from audio sample vector and testttt~~
 7. ~~HMM model to track input audio (from computer or live mic) against templates.~~
-8. understand which parameters bring about robustness, try quantifying how model behaves with changes in parameters rather than just intuiting it
-9. put together the UI.
+8. ~~understand which parameters bring about robustness, try quantifying how model behaves with changes in parameters rather than just intuiting it~~
+9. ~~put together the UI.~~
 
 IT WORKSSKSKSKSJSKFJSKJFSKJ
 

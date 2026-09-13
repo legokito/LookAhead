@@ -1,0 +1,13 @@
+*.o
+*.swp
+*.mid
+*.f32
+*.i64
+*.mp3
+*.wav
+*.d
+
+actualRun
+
+.DS_Store
+.vscode

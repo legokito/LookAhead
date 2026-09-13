@@ -15,9 +15,10 @@ HMM::HMM(std::span<const float> templateFrames, std::span<const int64_t> downbea
 	K_ = K;
 	T = templateFrames_.size() / K;
 	prevProbs_.assign(T, -1e30f); // log(0) = -1e30f
-	prevProbs_[0] = 0.0f; // log (1) = 0, i.e. full confidence at start
-	curProbs_.resize(T);
+	prevProbs_[0] = 0.0f;
+	curProbs_.assign(T, -1e30f); 
 
+	probFrameIndex_ = 0;
 	frameNo_ = 0;
 	measureNo_ = 0;
 }
@@ -98,6 +99,77 @@ int HMM::updateModel(std::span<float> features_){
 	// prevProb and transitionMatrix already stored as logValues	
 	// and ofc we normalize the new probs and swap the pointers
 	
+
+**/
+
+int HMM::updateModelWithBeaming(std::span<float> features_){
+
+	// use beaming based on current frame no. 
+
+	const static float b = 10; //tuneable
+
+	float largestProb = -1e38f;
+	int largestProbIndex = 0;
+	for (int i = probFrameIndex_; i < probFrameIndex_ + 240; i++){
+		if (i >= T) break;
+
+		curProbs_[i] = (b * std::inner_product(features_.begin(), 
+			features_.end(), templateFrames_.data() + i*K_, 0.0));	
+			
+		// find largest 
+		float largest = -1e38f;	
+		for (int k = 0; k < 5; k++){
+			if (i - k >= 0){
+				float temp = prevProbs_[i - k] + sparseTransition_[k];
+				if (temp > largest) largest = temp;
+			}
+		}
+
+		curProbs_[i] += largest;
+
+		if (curProbs_[i] > largestProb){
+			largestProb = curProbs_[i];
+			largestProbIndex = i;
+		}
+	}	
+
+	for (int i = probFrameIndex_; i < probFrameIndex_ + 240; i++){
+		if (i >= T) break;
+		curProbs_[i] -= largestProb;
+	}
+
+	// update location
+	frameNo_ = largestProbIndex;
+	
+	int tracker = 1;
+	int trackerEnd = downbeatFrames_.size();
+	while (tracker < trackerEnd){
+		if (frameNo_ < downbeatFrames_[tracker-1]){
+			break;
+		}
+		tracker += 2;
+	}
+	measureNo_ = downbeatFrames_[std::max(1, tracker-2)];
+
+	std::swap(prevProbs_, curProbs_);
+
+	probFrameIndex_ = std::max(frameNo_ - 40, (int64_t) 0);
+
+	return measureNo_;
+
+}
+/** 
+
+	the previous versions thought of the entire template as states to count over
+	however, while playing a piece, you only move forward and only need to compute
+	over nearby frames. 
+
+	in simple terms - for chopin op9 no1, we were computing over 60000+ states,
+	but we can cut that to 200 and still have it work reliably (in fact better!). 
+
+	the additional time that we save can be used to do more rigorous computations
+	that give our "path" more credibility. 
+
 **/	
 
 

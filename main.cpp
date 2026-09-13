@@ -97,8 +97,13 @@ int main(int args, char* argv[])
 
 	// couple viewer with this file	
 	char* viewerArgv[] = {(char*)"python3", (char*)"sheetMusicViewer.py", nullptr};
-	pid_t viewer = -1;
-	posix_spawnp(&viewer, "python3", nullptr, nullptr, viewerArgv, environ);	
+	pid_t viewer;
+	int rc = posix_spawnp(&viewer, "python3", nullptr, nullptr, viewerArgv, environ);
+	if (rc != 0) {
+    	std::cerr << "could not start sheetMusicViewer.py: " << std::strerror(rc) << "\n";
+    	ma_device_uninit(&device);
+    	return 1;
+	}
 
 	uint64_t prevCqtCount = rb.getTotalCount();
 
@@ -107,7 +112,6 @@ int main(int args, char* argv[])
 
 	while (isRunning){
 		while (prevCqtCount + hopSize < rb.getTotalCount()){
-
 			// copy rb. check for tearing.
 			int attempts = rb.copyRingBuffer(rb_copy, rb_copy.size()); 
 			if (attempts > 0) continue;			
@@ -116,7 +120,7 @@ int main(int args, char* argv[])
 
 			// cqt			
 			featureExtractor.processBuffer(rb_copy, features_);
-			measureNo_ = hmm.updateModel(features_);
+			measureNo_ = hmm.updateModelWithBeaming(features_);
 
 			if (measureNo_ != lastWritten){
 				std::ofstream f("measureNo.tmp", std::ios::trunc);
@@ -128,11 +132,21 @@ int main(int args, char* argv[])
 				std::cout << measureNo_ << std::endl;
 			}
 		}
-		if (waitpid(viewer, nullptr, WNOHANG) == viewer) isRunning = false;
+
+		// coupling related
+		if (waitpid(viewer, nullptr, WNOHANG) == viewer) {
+    		viewer = 0;                 // the pid isn't ours anymore
+    		isRunning = false;
+		}
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}    
-	kill(viewer, SIGTERM);
-	waitpid(viewer, nullptr, 0);
+
+	if (viewer > 0) {
+		kill(viewer, SIGTERM);
+   		waitpid(viewer, nullptr, 0);
+	}
+
     ma_device_uninit(&device);
 
 

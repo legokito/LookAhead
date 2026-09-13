@@ -20,6 +20,7 @@ private:
 	size_t K_;
 
 	int64_t frameNo_;
+	int64_t probFrameIndex_;
 	int measureNo_;
 
 	std::span<const float> templateFrames_;
@@ -28,5 +29,6 @@ private:
 public: 
 	HMM(std::span<const float> templateFrames, std::span<const int64_t> downbeatFrames, size_t K);
 	int updateModel(std::span<float> features_);	
+	int updateModelWithBeaming(std::span<float> features_);	
 
 };
