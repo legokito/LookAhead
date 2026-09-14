@@ -1,0 +1,7 @@
+music21==10.5.0
+pretty_midi==0.2.11
+pyfluidsynth==1.4.0
+numpy==2.4.6
+soundfile==0.14.0
+verovio==6.3.0
+pywebview==6.2.1

@@ -40,6 +40,12 @@ int main(int args, char* argv[])
 		throw std::runtime_error("mxlToSVG messed up");
 	}
 
+	// measureNo should always start with 1
+	std::ofstream f("measureNo.tmp", std::ios::trunc);
+	f << 1 << "\n";
+	f.close();
+	std::rename("measureNo.tmp", "measureNo.txt"); //rename is atomic :)
+	
 
 	
 	// variables	
@@ -84,10 +90,6 @@ int main(int args, char* argv[])
 
 	// for aborting
 	std::signal(SIGINT, [](int) { 
-		std::ofstream f("measureNo.tmp", std::ios::trunc);
-		f << 1 << "\n";
-		f.close();
-		std::rename("measureNo.tmp", "measureNo.txt"); //rename is atomic :)
 		isRunning = false; 
 	});  
 	std::cout << "ctrl + c to stop\n";

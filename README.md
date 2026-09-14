@@ -1,41 +1,32 @@
 # LookAhead
-writing an automated page turner from scratch in c++ 20 to learn about real-time audio/systems programming!
+Automated page turner for pianists to ensure your next line is always in sight! 
+It listens to you play, follows your position in the score in real time, and turns the page at logical intervals.
 
-goal is to use pitch binning (cqt) with HMM/OLTW based approaches (documented in literature) to detect position on sheet music while user plays a piece.    
-this positional information would be used to trigger the half-page turns I need to make this work!
-
-engine will be written from scratch. musicXML parsing and rendering will be done using existing libraries.
-
-# tasks:
-1. ~~use miniaudio and get audio input working~~
-2. ~~pitch detection logic to detect a440 on mic input~~
-3. ~~real-time pitch detection (naive-cqt) across 88 piano pitches.~~
-4. ~~visualizer for pitch bins (good for quick reference)~~
-5. ~~structure to build 24khz audio sample vector from xml file (use python libs)~~
-6. ~~build template from audio sample vector and testttt~~
-7. ~~HMM model to track input audio (from computer or live mic) against templates.~~
-8. ~~understand which parameters bring about robustness, try quantifying how model behaves with changes in parameters rather than just intuiting it~~
-9. ~~put together the UI.~~
-
-IT WORKSSKSKSKSJSKFJSKJFSKJ
-
-methods of hmm are still fairly naive and ofc tuning and improvements are to be made for robustness, polish, blah, blah 
-
-but generally it tracks my current measure while playing chopin op 9 no 1 fairly reliablyyy
-
-# notes:
-- i'm starting to see why naming conventions, and clear architecture drawings are needed to maintain and use clean code lol
-
-
-# future explorations:
-1. optimize naive cqt with parallelism. 
-2. build musicXML to WAV from scratch (or rather, musicXML to trackable templates)
+The user only supplies a MusicXML (.mxl or .xml) file. LookAhead uses this file to render the sheet music, synthesize a reference recording of the piece, and convert it into a bank of "spectral templates" that encode what the piece sounds like over time. While you play, LookAhead matches your live audio against those "spectral templates" and tracks your most likely position with a hidden Markov model. When it notices you passing certain checkpoints, it triggers the half-page turns. 
  
+The core engine is written completely from scratch in C++20: from the SPSC ring buffer to pass incoming audio samples, to feeding them into a constant-Q transform to generate the spectral templates, and the beam-search (Viterbi) hidden markov model that decodes live position every ~4ms. Audio I/O for accessing samples, and MusicXML parsing + sheet rendering use existing libraries. 
 
-# acknowledgements/references/dependencies:
-1. oltw paper by dixon
-2. real-time audio programming 101: time waits for nothing by ross bencina
-3. miniaudio 
-4. https://freepats.zenvoid.org/Piano/acoustic-grand-piano.html piano sound font
-5. pretty\_midi and music21 and fluidsynth
+Built to learn real-time audio and systems programming (and build a project I've been wanting to realize for over a year - see GazeScore in my repo list for reference!).
 
+## How to use 
+macOS only.
+1. `brew install fluid-synth`
+2. `pip install -r requirements.txt`
+3. Drop your score in 'data\_files/' ('\*.mxl' or '\*.xml' only). Currently only supports pieces with no repeats. 
+4. `make run SCORE=data_files/your-piece.mxl`
+5. Close the window or ctrl-c to stop.
+
+Start playing from measure 1 and play it through accurately, in a quiet room. You can find free .mxl files for popular classical music by filtering for public domain on Musescore.
+
+## References
+- Dixon, Live Tracking of Musical Performances Using On-Line Time Warping
+- Brown, Calculation of a Constant Q Spectral Transform
+- Bencina, Real-time Audio Programming 101: Time Waits for Nothing
+- [miniaudio](https://github.com/mackron/miniaudio), music21, pretty\_midi, fluidsynth, Verovio
+- Soundfont: [FreePats Upright Piano KW](https://freepats.zenvoid.org/Piano/acoustic-grand-piano.html#UprightKW)
+
+## License
+MIT — see [LICENSE](LICENSE).
+
+Bundled: `data_files/piano.sf2` is FreePats "Upright Piano KW" (CC0).
+`third_party/miniaudio.h` is public domain / MIT-0.
