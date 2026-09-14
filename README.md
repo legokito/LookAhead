@@ -8,6 +8,8 @@ The core engine is written completely from scratch in C++20: from the SPSC ring 
 
 Built to learn real-time audio and systems programming (and build a project I've been wanting to realize for over a year - see GazeScore in my repo list for reference!).
 
+[![LookAhead Demo](https://youtu.be/UT7HJr25C9w)](https://youtu.be/UT7HJr25C9w)
+
 ## How to use 
 macOS only.
 1. `brew install fluid-synth`
